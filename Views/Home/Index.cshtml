@@ -1,0 +1,172 @@
+﻿@{
+    ViewData["Title"] = "Workspace Clínico";
+}
+
+<!-- Estilos para deixar as tabelas geradas pela IA bonitas -->
+<style>
+    #ai-content table { border-collapse: collapse; width: 100%; margin-top: 1rem; margin-bottom: 1rem; }
+    #ai-content th, #ai-content td { border: 1px solid #198754; padding: 0.75rem; text-align: left; }
+    #ai-content th { background-color: rgba(25, 135, 84, 0.1); color: #0f5132; }
+    #ai-content h2, #ai-content h3 { color: #0f5132; margin-top: 1.5rem; font-size: 1.25rem; font-weight: bold; }
+</style>
+
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="mb-0 text-body-emphasis fw-bold">Análise e Revisão Documental</h3>
+        <div>
+            <a asp-controller="Home" asp-action="Historico" class="btn btn-outline-primary btn-sm px-3 fw-medium me-2 shadow-sm">
+                <i class="bi bi-clock-history"></i> Ver Histórico
+            </a>
+            <button id="btnToggleTheme" class="btn btn-outline-dark btn-sm px-3 fw-medium shadow-sm">Alternar Tema</button>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Menu Lateral -->
+        <div class="col-md-3 mb-4">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-body-tertiary border-bottom-0 pt-3 pb-2">
+                    <h6 class="mb-0 text-uppercase fw-bold text-body-secondary" style="letter-spacing: 0.5px; font-size: 0.85rem;">Módulos de Análise</h6>
+                </div>
+                <div class="list-group list-group-flush">
+                    <a href="#" class="list-group-item list-group-item-action fw-medium py-3">📝 Rascunho de Anamnese</a>
+                    <a href="#" class="list-group-item list-group-item-action fw-medium py-3">📄 Revisão de Laudo Clínico</a>
+                    <a href="#" class="list-group-item list-group-item-action fw-medium py-3">📊 Planejamento Terapêutico</a>
+                    <a href="#" class="list-group-item list-group-item-action fw-medium py-3">📈 Evolução Diária</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Área Central -->
+        <div class="col-md-9">
+            <div class="card shadow-sm border-0">
+                <div class="card-body p-4 p-md-5">
+                    <h5 class="card-title text-body-emphasis mb-3 fw-bold">Nova Submissão de Documento</h5>
+                    <p class="text-body-secondary small mb-4">
+                        Faça o upload do documento ou insira as diretrizes clínicas. O sistema processará as informações com base exclusivamente na literatura e normativas fonoaudiológicas vigentes.
+                    </p>
+
+                    @if (ViewBag.AvisoBaseDados != null)
+                    {
+                        <div class="mt-4 alert alert-info border-info-subtle shadow-sm">
+                            <i class="bi bi-info-circle-fill me-2"></i> @ViewBag.AvisoBaseDados
+                        </div>
+                    }
+
+                   <!-- Formulário de Envio -->
+<form asp-controller="Home" asp-action="ProcessarDocumento" method="post" enctype="multipart/form-data">
+    <div class="mb-4 bg-body-tertiary p-3 rounded border border-secondary-subtle">
+        <label class="form-label fw-bold small text-uppercase text-body-secondary">1. Envie um Arquivo (.TXT, .PDF, .DOCX)</label>
+        <input class="form-control border-secondary-subtle mb-3" type="file" name="arquivoUpload">
+        
+        <label class="form-label fw-bold small text-uppercase text-body-secondary">OU Cole o Caso Clínico Aqui</label>
+        <textarea class="form-control border-secondary-subtle" name="textoLivre" rows="5" placeholder="Cole o laudo, anamnese ou texto do caso clínico aqui..."></textarea>
+    </div>
+    <div class="mb-4">
+        <label class="form-label fw-bold small text-uppercase text-body-secondary">2. Parâmetros de Revisão (Opcional)</label>
+        <textarea class="form-control border-secondary-subtle" name="parametrosRevisao" rows="3" placeholder="Ex: Aja como um supervisor e corrija a ortografia e as normas do CFFa..."></textarea>
+    </div>
+    <div class="d-flex justify-content-end mt-4">
+        <button id="btnSubmit" type="submit" class="btn btn-dark px-5 py-2 fw-bold shadow-sm">
+            Iniciar Processamento Clínico
+        </button>
+    </div>
+</form>
+
+                    <!-- Exibição dos Resultados -->
+                    @if (ViewBag.ResultadoIA != null)
+                    {
+                        <div class="mt-5 border-top pt-4">
+                            @if (ViewBag.TextoOriginal != null)
+                            {
+                                <div class="mb-4 p-4 rounded bg-light border border-secondary-subtle shadow-sm">
+                                    <h6 class="fw-bold text-secondary-emphasis mb-3">Texto Original Submetido:</h6>
+                                    <p class="mb-0 text-secondary-emphasis font-monospace small" style="white-space: pre-wrap;">@ViewBag.TextoOriginal</p>
+                                </div>
+                            }
+
+                            <!-- Bloco do Parecer IA com Botão de Copiar -->
+                            <div class="p-4 rounded bg-success-subtle border border-success-subtle shadow-sm">
+                                <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom border-success-subtle">
+                                    <h5 class="fw-bold text-success-emphasis mb-0">
+                                        <i class="bi bi-robot me-2"></i> Parecer Clínico (IA)
+                                    </h5>
+                                    
+                                    <!-- Botão Copiar -->
+                                    <button id="btnCopy" type="button" class="btn btn-sm btn-success fw-medium shadow-sm px-3" onclick="copiarConteudo()" title="Copiar texto formatado para o Word">
+                                        <i class="bi bi-copy me-1"></i> Copiar Formatação
+                                    </button>
+                                </div>
+                                
+                                <!-- Div com fundo branco simulando uma folha de papel para melhor leitura -->
+                                <div id="ai-content" class="text-dark bg-body p-4 rounded border border-success-subtle shadow-sm lh-lg"></div>
+                                
+                                <!-- Texto bruto escondido -->
+                                <textarea id="raw-markdown" style="display:none;">@ViewBag.ResultadoIA</textarea>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Biblioteca para processar o texto da IA -->
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+<script>
+    // Converte o Markdown em HTML assim que a página carrega
+    document.addEventListener("DOMContentLoaded", function() {
+        var rawTextElement = document.getElementById("raw-markdown");
+        if(rawTextElement) {
+            document.getElementById("ai-content").innerHTML = marked.parse(rawTextElement.value);
+        }
+    });
+
+    // Função para Copiar o texto formatado (Rich Text)
+    function copiarConteudo() {
+        var conteudo = document.getElementById('ai-content');
+        var range = document.createRange();
+        range.selectNode(conteudo);
+        window.getSelection().removeAllRanges();
+        window.getSelection().addRange(range);
+        
+        try {
+            document.execCommand('copy');
+            window.getSelection().removeAllRanges();
+            
+            // Efeito visual no botão para confirmar a cópia
+            var btn = document.getElementById('btnCopy');
+            var originalHtml = btn.innerHTML;
+            btn.innerHTML = '<i class="bi bi-check2-all me-1"></i> Copiado!';
+            btn.classList.replace('btn-success', 'btn-dark');
+            
+            setTimeout(function() {
+                btn.innerHTML = originalHtml;
+                btn.classList.replace('btn-dark', 'btn-success');
+            }, 2000);
+            
+        } catch (err) {
+            alert('Não foi possível copiar o texto.');
+        }
+    }
+
+    // Código do Botão Dark Mode
+    document.getElementById('btnToggleTheme').addEventListener('click', function () {
+        var htmlElement = document.documentElement;
+        var btnToggle = document.getElementById('btnToggleTheme');
+        var btnSubmit = document.getElementById('btnSubmit');
+        var currentTheme = htmlElement.getAttribute('data-bs-theme');
+        
+        if (currentTheme === 'dark') {
+            htmlElement.setAttribute('data-bs-theme', 'light');
+            btnToggle.classList.replace('btn-outline-light', 'btn-outline-dark');
+            if(btnSubmit) btnSubmit.classList.replace('btn-light', 'btn-dark');
+        } else {
+            htmlElement.setAttribute('data-bs-theme', 'dark');
+            btnToggle.classList.replace('btn-outline-dark', 'btn-outline-light');
+            if(btnSubmit) btnSubmit.classList.replace('btn-dark', 'btn-light');
+        }
+    });
+</script>

@@ -1,0 +1,167 @@
+@model IEnumerable<Base_de_dados_Fonoaudiologia.Models.DocumentoGerado>
+
+@{
+    ViewData["Title"] = "Histórico de Documentos";
+}
+
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="d-flex align-items-center">
+            <a asp-controller="Home" asp-action="Index" class="btn btn-outline-secondary btn-sm me-3 px-3 fw-medium shadow-sm" title="Voltar ao Workspace">
+                <i class="bi bi-arrow-left me-1"></i> Voltar
+            </a>
+            <h3 class="mb-0 text-body-emphasis fw-bold">Histórico de Laudos</h3>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th scope="col" class="ps-4 py-3">Caso</th>
+                            <th scope="col" class="py-3">Data</th>
+                            <th scope="col" class="py-3">Categoria</th>
+                            <th scope="col" class="text-end pe-4 py-3">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.Any())
+                        {
+                            <tr>
+                                <td colspan="4" class="text-center py-5 text-muted">
+                                    <i class="bi bi-inbox fs-2 d-block mb-2"></i>
+                                    Nenhum documento salvo.
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var doc in Model)
+                            {
+                                string tituloInteligente = doc.ConteudoTexto.Length > 45 
+                                                           ? doc.ConteudoTexto.Substring(0, 45) + "..." 
+                                                           : doc.ConteudoTexto;
+                                <tr>
+                                    <td class="ps-4 fw-bold text-body-secondary">@tituloInteligente</td>
+                                    <td>@doc.DataCriacao.ToString("dd/MM/yy HH:mm")</td>
+                                    <td><span class="badge bg-secondary-subtle text-secondary-emphasis border border-secondary-subtle px-2 py-1">@doc.Categoria</span></td>
+                                    
+                                    <td class="text-end pe-4">
+                                        <!-- Visualizar -->
+                                        <button type="button" class="btn btn-sm btn-outline-primary me-1 fw-medium" data-bs-toggle="modal" data-bs-target="#modalVisualizar-@doc.Id" title="Visualizar Documento">
+                                            <i class="bi bi-eye"></i>
+                                        </button>
+                                        
+                                        <!-- Reprocessar -->
+                                        <form asp-controller="Home" asp-action="ReprocessarIA" method="post" class="d-inline">
+                                            <input type="hidden" name="id" value="@doc.Id" />
+                                            <button type="submit" class="btn btn-sm btn-outline-success fw-medium me-1" title="Reprocessar IA">
+                                                <i class="bi bi-arrow-repeat"></i>
+                                            </button>
+                                        </form>
+
+                                        <!-- Apagar -->
+                                        <form asp-controller="Home" asp-action="DeletarDocumento" method="post" class="d-inline" onsubmit="return confirm('Atenção: Tem certeza que deseja apagar este caso permanentemente?');">
+                                            <input type="hidden" name="id" value="@doc.Id" />
+                                            <button type="submit" class="btn btn-sm btn-outline-danger fw-medium" title="Apagar Caso">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+
+                                <!-- Janela Modal TELA DIVIDIDA -->
+                                <div class="modal fade" id="modalVisualizar-@doc.Id" tabindex="-1" aria-hidden="true">
+                                    <div class="modal-dialog modal-dialog-centered modal-xl">
+                                        <div class="modal-content border-0 shadow">
+                                            <div class="modal-header bg-body-tertiary">
+                                                <h5 class="modal-title fw-bold text-success-emphasis">
+                                                    <i class="bi bi-robot me-2"></i> Análise: @tituloInteligente
+                                                </h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                            </div>
+                                            <div class="modal-body p-4">
+                                                <div class="row">
+                                                    <!-- Coluna da Esquerda: Texto Original -->
+                                                    <div class="col-md-4 border-end">
+                                                        <span class="text-uppercase fw-bold small text-muted d-block mb-2">Texto Original do Aluno</span>
+                                                        <div class="p-3 bg-light rounded border border-secondary-subtle font-monospace text-dark small lh-lg" style="white-space: pre-wrap; overflow-y: auto; height: 50vh;">@doc.ConteudoTexto</div>
+                                                    </div>
+                                                    
+                                                    <!-- Coluna da Direita: Parecer da IA Formato -->
+                                                    <div class="col-md-8">
+                                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                                            <span class="text-uppercase fw-bold small text-success">Parecer Clínico da IA</span>
+                                                            <button type="button" class="btn btn-sm btn-outline-success border-0 py-0" onclick="copiarModal('md-content-@doc.Id')" title="Copiar Formatação">
+                                                                <i class="bi bi-copy"></i> Copiar
+                                                            </button>
+                                                        </div>
+                                                        <div class="p-3 bg-success-subtle rounded border border-success-subtle text-dark lh-lg markdown-container" style="overflow-y: auto; height: 50vh;">
+                                                            @if (!string.IsNullOrEmpty(doc.ParecerIA))
+                                                            {
+                                                                <textarea style="display:none;" class="raw-md">@doc.ParecerIA</textarea>
+                                                                <div id="md-content-@doc.Id" class="md-content bg-body p-3 rounded border border-success-subtle"></div>
+                                                            }
+                                                            else
+                                                            {
+                                                                <div class="alert alert-warning mt-2 border-warning-subtle text-warning-emphasis">
+                                                                    <i class="bi bi-exclamation-triangle me-2"></i> Este documento foi salvo antes da atualização. Feche esta janela e clique no botão verde "Reprocessar IA".
+                                                                </div>
+                                                            }
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer bg-body-tertiary">
+                                                <button type="button" class="btn btn-secondary px-4 fw-medium" data-bs-dismiss="modal">Fechar</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .md-content table { border-collapse: collapse; width: 100%; margin-top: 1rem; margin-bottom: 1rem; }
+    .md-content th, .md-content td { border: 1px solid #198754; padding: 0.5rem; text-align: left; font-size: 0.85rem; }
+    .md-content th { background-color: rgba(25, 135, 84, 0.1); color: #0f5132; }
+    .md-content h2, .md-content h3 { color: #0f5132; font-size: 1.1rem; margin-top: 1rem; font-weight: bold; }
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        var containers = document.querySelectorAll('.markdown-container');
+        containers.forEach(function(container) {
+            var raw = container.querySelector('.raw-md');
+            var content = container.querySelector('.md-content');
+            if(raw && content) {
+                content.innerHTML = marked.parse(raw.value);
+            }
+        });
+    });
+
+    function copiarModal(elementoId) {
+        var conteudo = document.getElementById(elementoId);
+        var range = document.createRange();
+        range.selectNode(conteudo);
+        window.getSelection().removeAllRanges();
+        window.getSelection().addRange(range);
+        
+        try {
+            document.execCommand('copy');
+            window.getSelection().removeAllRanges();
+            alert('Texto copiado com sucesso!');
+        } catch (err) {
+            alert('Não foi possível copiar o texto.');
+        }
+    }
+</script>
