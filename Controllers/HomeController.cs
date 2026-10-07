@@ -7,9 +7,11 @@ using System.Threading.Tasks;
 using System;
 using System.Linq;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Base_de_dados_Fonoaudiologia.Controllers
 {
+    [Authorize] // <-- AQUI ESTÁ A TRANCA DE SEGURANÇA QUE BLOQUEIA TUDO!
     public class HomeController : Controller
     {
         private readonly GroqService _iaService; 
