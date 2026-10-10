@@ -40,3 +40,19 @@ Durante o desenvolvimento desta aplicação full-stack, consegui elevar minhas h
 1. Clone ou baixe a pasta do repositório:
 ```bash
 git clone [https://github.com/Andryws121/Base-de-dados-Fonoaudiologia.git](https://github.com/Andryws121/Base-de-dados-Fonoaudiologia.git)
+```
+2. Abra o projeto no **Visual Studio** ou **VS Code**.
+3. No arquivo `appsettings.Development.json`, configure a string de conexão do seu banco de dados MySQL local e insira a sua chave da API do Groq.
+4. Abra o Console do Gerenciador de Pacotes (ou terminal) e rode as migrações para criar o banco de dados:
+```bash
+dotnet ef database update
+```
+5. Execute o projeto (`F5` no Visual Studio ou `dotnet run` no VS Code). O sistema abrirá no seu navegador local (localhost).
+
+## 📞 Contato
+
+Desenvolvido por **Andryws Pedro**.
+
+- **LinkedIn:** [Andryws Pedro](https://www.linkedin.com/in/andryws-pedro-2b15b6275)
+- **GitHub:** [Andryws121](https://github.com/Andryws121)
+- **WhatsApp:** [+55 (31) 98529-4671](https://wa.me/5531985294671)
