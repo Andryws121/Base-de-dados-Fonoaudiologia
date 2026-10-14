@@ -14,5 +14,5 @@ COPY --from=build /app/out .
 EXPOSE 8080
 ENV ASPNETCORE_URLS=http://+:8080
 
-# Iniciar a aplicação
-ENTRYPOINT ["dotnet", "Base_de_dados_Fonoaudiologia.dll"]
+# Iniciar a aplicação (A CORREÇÃO ESTÁ AQUI NESTA LINHA)
+ENTRYPOINT ["dotnet", "Base-de-dados-Fonoaudiologia.dll"]
