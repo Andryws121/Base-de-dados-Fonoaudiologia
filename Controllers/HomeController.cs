@@ -12,6 +12,7 @@ using iText.Kernel.Pdf;
 using iText.Kernel.Pdf.Canvas.Parser;
 using iText.Kernel.Pdf.Canvas.Parser.Listener;
 using System.Text;
+// Forçar deploy do iText7
 
 namespace Base_de_dados_Fonoaudiologia.Controllers
 {
