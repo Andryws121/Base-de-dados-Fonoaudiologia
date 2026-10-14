@@ -8,6 +8,10 @@ using System;
 using System.Linq;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Authorization;
+using iText.Kernel.Pdf;
+using iText.Kernel.Pdf.Canvas.Parser;
+using iText.Kernel.Pdf.Canvas.Parser.Listener;
+using System.Text;
 
 namespace Base_de_dados_Fonoaudiologia.Controllers
 {
@@ -48,9 +52,31 @@ namespace Base_de_dados_Fonoaudiologia.Controllers
             // 2. Se um arquivo for enviado, ele sobrepõe o texto colado
             if (arquivoUpload != null && arquivoUpload.Length > 0)
             {
-                using (var reader = new StreamReader(arquivoUpload.OpenReadStream()))
+                // Se for PDF, usamos o iText7 para extrair o texto real
+                if (arquivoUpload.FileName.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
                 {
-                    conteudoArquivo = await reader.ReadToEndAsync();
+                    using (var stream = arquivoUpload.OpenReadStream())
+                    using (var pdfReader = new PdfReader(stream))
+                    using (var pdfDocument = new PdfDocument(pdfReader))
+                    {
+                        var textBuilder = new StringBuilder();
+                        // Percorre todas as páginas do PDF
+                        for (int i = 1; i <= pdfDocument.GetNumberOfPages(); i++)
+                        {
+                            var page = pdfDocument.GetPage(i);
+                            var text = PdfTextExtractor.GetTextFromPage(page, new SimpleTextExtractionStrategy());
+                            textBuilder.AppendLine(text);
+                        }
+                        conteudoArquivo = textBuilder.ToString();
+                    }
+                }
+                // Se for outro tipo de ficheiro (como .txt), lê normalmente
+                else
+                {
+                    using (var reader = new StreamReader(arquivoUpload.OpenReadStream()))
+                    {
+                        conteudoArquivo = await reader.ReadToEndAsync();
+                    }
                 }
             }
 
