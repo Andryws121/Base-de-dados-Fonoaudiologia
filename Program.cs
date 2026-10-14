@@ -1,7 +1,9 @@
-using Microsoft.AspNetCore.Identity; // NOVO: Necessário para o Identity
+using Microsoft.AspNetCore.Identity; 
 using Microsoft.EntityFrameworkCore;
 using Base_de_dados_Fonoaudiologia.Models;
 using Base_de_dados_Fonoaudiologia.Services;
+using Microsoft.AspNetCore.DataProtection; // NOVO: Para manter o login ativo
+using System.IO; // NOVO: Para lidar com pastas do sistema
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -17,9 +19,24 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
 
-// NOVO: Configuração do motor do Identity (Autenticação) ligando ao AppDbContext
+// Configuração do motor do Identity (Autenticação) ligando ao AppDbContext
 builder.Services.AddDefaultIdentity<Usuario>(options => options.SignIn.RequireConfirmedAccount = false)
     .AddEntityFrameworkStores<AppDbContext>();
+
+// =========================================================================
+// CORREÇÃO: MANTER O LOGIN ATIVO (Evita que o servidor apague a sessão)
+// =========================================================================
+builder.Services.AddDataProtection()
+    .PersistKeysToFileSystem(new DirectoryInfo(Path.Combine(builder.Environment.ContentRootPath, "TempKeys")))
+    .SetApplicationName("WorkspaceFonoaudiologia");
+
+builder.Services.ConfigureApplicationCookie(options =>
+{
+    options.ExpireTimeSpan = TimeSpan.FromDays(30); // Mantém o login por 30 dias
+    options.SlidingExpiration = true;
+    options.LoginPath = "/Identity/Account/Login"; // Redireciona os invasores para o Login
+});
+// =========================================================================
 
 var app = builder.Build();
 
@@ -35,11 +52,11 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
-// NOVO: Ativa o sistema de Autenticação (tem de ficar estritamente ANTES da Autorização)
+// Ativa o sistema de Autenticação (tem de ficar estritamente ANTES da Autorização)
 app.UseAuthentication(); 
 app.UseAuthorization();
 
-// NOVO: Mapeia as rotas das telas de Login/Registro nativas do Identity
+// Mapeia as rotas das telas de Login/Registro nativas do Identity
 app.MapRazorPages(); 
 
 app.MapControllerRoute(

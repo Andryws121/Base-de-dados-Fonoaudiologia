@@ -12,11 +12,10 @@ using iText.Kernel.Pdf;
 using iText.Kernel.Pdf.Canvas.Parser;
 using iText.Kernel.Pdf.Canvas.Parser.Listener;
 using System.Text;
-// Forçar deploy do iText7
 
 namespace Base_de_dados_Fonoaudiologia.Controllers
 {
-    [Authorize] // <-- AQUI ESTÁ A TRANCA DE SEGURANÇA QUE BLOQUEIA TUDO!
+    [Authorize] // <-- TRANCA DE SEGURANÇA GERAL: Obriga a fazer Login para aceder a qualquer página
     public class HomeController : Controller
     {
         private readonly GroqService _iaService; 
@@ -45,15 +44,12 @@ namespace Base_de_dados_Fonoaudiologia.Controllers
         [HttpPost]
         public async Task<IActionResult> ProcessarDocumento(IFormFile arquivoUpload, string textoLivre, string parametrosRevisao)
         {
-            // 1. Usa o texto colado pelo aluno ou uma mensagem padrão se estiver vazio
             string conteudoArquivo = string.IsNullOrWhiteSpace(textoLivre) 
                                      ? "Nenhum arquivo ou texto fornecido." 
                                      : textoLivre;
 
-            // 2. Se um arquivo for enviado, ele sobrepõe o texto colado
             if (arquivoUpload != null && arquivoUpload.Length > 0)
             {
-                // Se for PDF, usamos o iText7 para extrair o texto real
                 if (arquivoUpload.FileName.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
                 {
                     using (var stream = arquivoUpload.OpenReadStream())
@@ -61,7 +57,6 @@ namespace Base_de_dados_Fonoaudiologia.Controllers
                     using (var pdfDocument = new PdfDocument(pdfReader))
                     {
                         var textBuilder = new StringBuilder();
-                        // Percorre todas as páginas do PDF
                         for (int i = 1; i <= pdfDocument.GetNumberOfPages(); i++)
                         {
                             var page = pdfDocument.GetPage(i);
@@ -71,7 +66,6 @@ namespace Base_de_dados_Fonoaudiologia.Controllers
                         conteudoArquivo = textBuilder.ToString();
                     }
                 }
-                // Se for outro tipo de ficheiro (como .txt), lê normalmente
                 else
                 {
                     using (var reader = new StreamReader(arquivoUpload.OpenReadStream()))
@@ -81,19 +75,17 @@ namespace Base_de_dados_Fonoaudiologia.Controllers
                 }
             }
 
-            // 3. Chama a IA
             var instrucao = string.IsNullOrWhiteSpace(parametrosRevisao) 
                             ? "Faça uma análise clínica padrão fonoaudiológica." 
                             : parametrosRevisao;
                             
             var resposta = await _iaService.AnalisarDocumentoClinico(instrucao, conteudoArquivo);
 
-            // 4. Salva no Banco de Dados
             var novoDocumento = new DocumentoGerado
             {
                 AlunoId = 1,
                 Categoria = "Avaliação Clínica",
-                ConteudoTexto = conteudoArquivo, // Agora salva o texto correto!
+                ConteudoTexto = conteudoArquivo,
                 ParecerIA = resposta, 
                 DataCriacao = DateTime.Now
             };
@@ -116,12 +108,10 @@ namespace Base_de_dados_Fonoaudiologia.Controllers
 
             ViewBag.TextoOriginal = documento.ConteudoTexto;
             
-            // 1. GERA O NOVO PARECER
             var resposta = await _iaService.AnalisarDocumentoClinico(
                 "Faça uma análise clínica padrão fonoaudiológica indicando possíveis erros.", 
                 documento.ConteudoTexto);
 
-            // 2. ATUALIZA O BANCO DE DADOS COM A NOVA RESPOSTA
             documento.ParecerIA = resposta;
             _context.DocumentosGerados.Update(documento);
             await _context.SaveChangesAsync();
@@ -145,6 +135,7 @@ namespace Base_de_dados_Fonoaudiologia.Controllers
         }
 
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
+        [AllowAnonymous] // Permite ver a página de erro mesmo sem estar logado
         public IActionResult Error()
         {
             return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
