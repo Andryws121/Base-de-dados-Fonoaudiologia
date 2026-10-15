@@ -43,7 +43,7 @@
                 <div class="card-body p-4 p-md-5">
                     <h5 class="card-title text-body-emphasis mb-3 fw-bold">Nova Submissão de Documento</h5>
                     <p class="text-body-secondary small mb-4">
-                        Faça o upload do documento ou insira as diretrizes clínicas. O sistema processará as informações com base exclusivamente na literatura e normativas fonoaudiológicas vigentes.
+                        Faça o upload do documento ou insira as diretrizes clínicas. Escolha se deseja extrair os dados fielmente para a base de dados ou gerar um plano terapêutico para estudo.
                     </p>
 
                     @if (ViewBag.AvisoBaseDados != null)
@@ -53,25 +53,37 @@
                         </div>
                     }
 
-                   <!-- Formulário de Envio -->
-<form asp-controller="Home" asp-action="ProcessarDocumento" method="post" enctype="multipart/form-data">
-    <div class="mb-4 bg-body-tertiary p-3 rounded border border-secondary-subtle">
-        <label class="form-label fw-bold small text-uppercase text-body-secondary">1. Envie um Arquivo (.TXT, .PDF, .DOCX)</label>
-        <input class="form-control border-secondary-subtle mb-3" type="file" name="arquivoUpload">
-        
-        <label class="form-label fw-bold small text-uppercase text-body-secondary">OU Cole o Caso Clínico Aqui</label>
-        <textarea class="form-control border-secondary-subtle" name="textoLivre" rows="5" placeholder="Cole o laudo, anamnese ou texto do caso clínico aqui..."></textarea>
-    </div>
-    <div class="mb-4">
-        <label class="form-label fw-bold small text-uppercase text-body-secondary">2. Parâmetros de Revisão (Opcional)</label>
-        <textarea class="form-control border-secondary-subtle" name="parametrosRevisao" rows="3" placeholder="Ex: Aja como um supervisor e corrija a ortografia e as normas do CFFa..."></textarea>
-    </div>
-    <div class="d-flex justify-content-end mt-4">
-        <button id="btnSubmit" type="submit" class="btn btn-dark px-5 py-2 fw-bold shadow-sm">
-            Iniciar Processamento Clínico
-        </button>
-    </div>
-</form>
+                    <!-- Formulário de Envio -->
+                    <!-- Nota: O asp-action foi removido da tag form e passado para os botões -->
+                    <form asp-controller="Home" method="post" enctype="multipart/form-data">
+                        <div class="mb-4 bg-body-tertiary p-3 rounded border border-secondary-subtle">
+                            <label class="form-label fw-bold small text-uppercase text-body-secondary">1. Envie um Arquivo (.TXT, .PDF, .DOCX)</label>
+                            <input class="form-control border-secondary-subtle mb-3" type="file" name="arquivoUpload">
+                            
+                            <label class="form-label fw-bold small text-uppercase text-body-secondary">OU Cole o Caso Clínico Aqui</label>
+                            <textarea class="form-control border-secondary-subtle" name="textoLivre" rows="5" placeholder="Cole o laudo, anamnese ou texto do caso clínico aqui..."></textarea>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label class="form-label fw-bold small text-uppercase text-body-secondary">2. Parâmetros de Revisão (Opcional)</label>
+                            <textarea class="form-control border-secondary-subtle" name="parametrosRevisao" rows="3" placeholder="Ex: Aja como um supervisor e corrija a ortografia e as normas do CFFa..."></textarea>
+                        </div>
+                        
+                        <!-- Nova área com os dois botões de ação -->
+                        <div class="d-flex justify-content-end mt-4 gap-3">
+                            
+                            <!-- Rota 1: Modo Digitador (Fiel e Restrito) -->
+                            <button type="submit" asp-action="ExtrairRelatorio" class="btn btn-success px-4 py-2 fw-bold shadow-sm" title="Extrai os dados fielmente sem inventar informação.">
+                                <i class="bi bi-file-earmark-check me-2"></i> Extrair e Salvar Relatório
+                            </button>
+
+                            <!-- Rota 2: Modo Supervisor (Criativo e de Estudo) -->
+                            <button type="submit" asp-action="GerarPlanoTerapeutico" class="btn btn-primary px-4 py-2 fw-bold shadow-sm" title="Gera um plano de intervenção com base no documento. Não grava na base de dados.">
+                                <i class="bi bi-lightbulb me-2"></i> Sugerir Plano Terapêutico
+                            </button>
+
+                        </div>
+                    </form>
 
                     <!-- Exibição dos Resultados -->
                     @if (ViewBag.ResultadoIA != null)
@@ -89,7 +101,7 @@
                             <div class="p-4 rounded bg-success-subtle border border-success-subtle shadow-sm">
                                 <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom border-success-subtle">
                                     <h5 class="fw-bold text-success-emphasis mb-0">
-                                        <i class="bi bi-robot me-2"></i> Parecer Clínico (IA)
+                                        <i class="bi bi-robot me-2"></i> Retorno Clínico (IA)
                                     </h5>
                                     
                                     <!-- Botão Copiar -->
@@ -152,21 +164,18 @@
         }
     }
 
-    // Código do Botão Dark Mode
+    // Código do Botão Dark Mode (Atualizado)
     document.getElementById('btnToggleTheme').addEventListener('click', function () {
         var htmlElement = document.documentElement;
         var btnToggle = document.getElementById('btnToggleTheme');
-        var btnSubmit = document.getElementById('btnSubmit');
         var currentTheme = htmlElement.getAttribute('data-bs-theme');
         
         if (currentTheme === 'dark') {
             htmlElement.setAttribute('data-bs-theme', 'light');
             btnToggle.classList.replace('btn-outline-light', 'btn-outline-dark');
-            if(btnSubmit) btnSubmit.classList.replace('btn-light', 'btn-dark');
         } else {
             htmlElement.setAttribute('data-bs-theme', 'dark');
             btnToggle.classList.replace('btn-outline-dark', 'btn-outline-light');
-            if(btnSubmit) btnSubmit.classList.replace('btn-dark', 'btn-light');
         }
     });
 </script>
